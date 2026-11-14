@@ -1,0 +1,24 @@
+go:
+    # Keep this in step with the go directive of go.mod.
+    version: 1.26
+    cgo: false
+repository:
+    path: github.com/goodtune/amber_exporter
+build:
+    binaries:
+        - name: amber_exporter
+    ldflags: |
+        -X github.com/prometheus/common/version.Version={{.Version}}
+        -X github.com/prometheus/common/version.Revision={{.Revision}}
+        -X github.com/prometheus/common/version.Branch={{.Branch}}
+        -X github.com/prometheus/common/version.BuildUser={{user}}@{{host}}
+        -X github.com/prometheus/common/version.BuildDate={{date "20060102-15:04:05"}}
+tarball:
+    files:
+        - README.md
+        - examples/systemd/amber_exporter.service
+crossbuild:
+    platforms:
+        - linux/amd64
+        - linux/arm64
+        - darwin/arm64

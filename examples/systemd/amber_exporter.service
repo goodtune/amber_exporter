@@ -1,0 +1,23 @@
+[Unit]
+Description=Amber Exporter
+Documentation=https://github.com/goodtune/amber_exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=amber_exporter
+# The file holds one line: AMBER_API_KEY=psk_...
+# Make it readable by root only: systemd reads it before it drops privileges.
+EnvironmentFile=/etc/amber_exporter/environment
+ExecStart=/usr/local/bin/amber_exporter
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+
+[Install]
+WantedBy=multi-user.target

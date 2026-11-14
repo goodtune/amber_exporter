@@ -1,0 +1,28 @@
+[
+  {
+    "id": "01E8RD8Q0GKBJ4DY1NT5Y0ZX1A",
+    "nmi": "3052282871",
+    "channels": [
+      {"identifier": "E1", "type": "general", "tariff": "EA010"}
+    ],
+    "network": "Ausgrid",
+    "status": "closed",
+    "activeFrom": "2022-06-06",
+    "closedOn": "2023-06-13",
+    "intervalLength": 30
+  },
+  {
+    "id": "01F5A5CRKMZ5BCX9P1S4V990AM",
+    "nmi": "3052282872",
+    "channels": [
+      {"identifier": "E1", "type": "general", "tariff": "EA116"},
+      {"identifier": "E2", "type": "controlledLoad", "tariff": "EA030"},
+      {"identifier": "B1", "type": "feedIn", "tariff": "EA029"}
+    ],
+    "network": "Ausgrid",
+    "status": "active",
+    "activeFrom": "2023-06-14",
+    "closedOn": null,
+    "intervalLength": 5
+  }
+]

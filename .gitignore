@@ -1,0 +1,6 @@
+/amber_exporter
+/.build/
+/.tarballs/
+/dist/
+*.test
+*.out

@@ -1,0 +1,5 @@
+.git
+/amber_exporter
+/.build
+/.tarballs
+/dist

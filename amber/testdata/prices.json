@@ -1,0 +1,52 @@
+[
+  {
+    "type": "CurrentInterval",
+    "date": "2026-11-14",
+    "duration": 5,
+    "startTime": "2026-11-14T03:35:01Z",
+    "endTime": "2026-11-14T03:40:00Z",
+    "nemTime": "2026-11-14T13:40:00+10:00",
+    "perKwh": 19.9,
+    "renewables": 52,
+    "spotPerKwh": 12.98,
+    "channelType": "general",
+    "spikeStatus": "none",
+    "descriptor": "veryLow",
+    "tariffInformation": {
+      "period": "offPeak",
+      "season": "summer",
+      "demandWindow": false
+    },
+    "estimate": false
+  },
+  {
+    "type": "CurrentInterval",
+    "date": "2026-11-14",
+    "duration": 5,
+    "startTime": "2026-11-14T03:35:01Z",
+    "endTime": "2026-11-14T03:40:00Z",
+    "nemTime": "2026-11-14T13:40:00+10:00",
+    "perKwh": 20.08,
+    "renewables": 52,
+    "spotPerKwh": 12.98,
+    "channelType": "controlledLoad",
+    "spikeStatus": "none",
+    "descriptor": "low",
+    "estimate": false
+  },
+  {
+    "type": "CurrentInterval",
+    "date": "2026-11-14",
+    "duration": 5,
+    "startTime": "2026-11-14T03:35:01Z",
+    "endTime": "2026-11-14T03:40:00Z",
+    "nemTime": "2026-11-14T13:40:00+10:00",
+    "perKwh": -11.09,
+    "renewables": 52,
+    "spotPerKwh": 12.98,
+    "channelType": "feedIn",
+    "spikeStatus": "none",
+    "descriptor": "high",
+    "estimate": false
+  }
+]

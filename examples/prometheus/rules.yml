@@ -1,0 +1,70 @@
+# Example rules for amber_exporter. Change the thresholds for your tariff.
+#
+# For the general and controlledLoad channels, a price is what you pay.
+# For the feedIn channel, a price is what you earn: it is negative when you
+# pay a penalty to export.
+
+groups:
+  - name: amber_recording
+    rules:
+      # Lowest and highest general price in the next 12 hours of the forecast.
+      - record: amber:forecast_price_cents_per_kwh:min12h
+        expr: |
+          min by (site_id) (
+            amber_forecast_price_cents_per_kwh{channel_type="general"}
+            and on (site_id, horizon)
+            (amber_forecast_interval_start_timestamp_seconds - time() < 12 * 3600)
+          )
+      - record: amber:forecast_price_cents_per_kwh:max12h
+        expr: |
+          max by (site_id) (
+            amber_forecast_price_cents_per_kwh{channel_type="general"}
+            and on (site_id, horizon)
+            (amber_forecast_interval_start_timestamp_seconds - time() < 12 * 3600)
+          )
+
+  - name: amber_alerts
+    rules:
+      - alert: AmberPriceHigh
+        expr: amber_price_cents_per_kwh{channel_type="general"} > 60
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Grid power costs {{ $value | printf \"%.0f\" }} c/kWh now."
+
+      - alert: AmberPriceSpikeForecast
+        expr: |
+          max by (site_id) (
+            amber_forecast_price_cents_per_kwh{channel_type="general", horizon=~"30m|1h|1h30m|2h"}
+          ) > 60
+        labels:
+          severity: info
+        annotations:
+          summary: "The forecast has a price of {{ $value | printf \"%.0f\" }} c/kWh in the next 2 hours."
+
+      # A negative feed-in price means that you pay to export.
+      - alert: AmberFeedInCostsMoney
+        expr: amber_price_cents_per_kwh{channel_type="feedIn"} < 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Solar export costs {{ $value | printf \"%.1f\" | reReplaceAll \"-\" \"\" }} c/kWh now."
+
+      - alert: AmberCollectorFailing
+        expr: amber_scrape_collector_success == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The {{ $labels.collector }} collector of amber_exporter fails."
+
+      # Usage data is usually one day behind. More than 3 days is unusual.
+      - alert: AmberUsageDataLate
+        expr: time() - amber_usage_latest_interval_end_timestamp_seconds > 3 * 86400
+        for: 1h
+        labels:
+          severity: info
+        annotations:
+          summary: "The latest usage data from Amber is {{ $value | humanizeDuration }} old."
