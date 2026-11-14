@@ -25,6 +25,7 @@ archives:
       - tar.gz
     files:
       - README.md
+      - LICENSE
 
 nfpms:
   - id: amber_exporter
@@ -33,6 +34,7 @@ nfpms:
     homepage: https://github.com/goodtune/amber_exporter
     maintainer: goodtune <goodtune@users.noreply.github.com>
     description: Prometheus exporter for Amber Electric prices, forecasts and usage
+    license: MIT
     formats:
       - rpm
       - deb
