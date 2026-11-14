@@ -12,12 +12,7 @@ The structure of the code and the flags are the same as in `node_exporter` and `
 ## Quick start
 
 1. Create an API key in the Amber web app, on the [Developers page](https://app.amber.com.au/developers).
-2. Build the exporter:
-
-   ```sh
-   make build
-   ```
-
+2. Get the exporter from the [releases page](https://github.com/goodtune/amber_exporter/releases), or build it with `make build`.
 3. Put the API key in the environment and start the exporter:
 
    ```sh
@@ -30,10 +25,37 @@ The structure of the code and the flags are the same as in `node_exporter` and `
 To read the API key from a file, use `--amber.api-key-file`.
 The exporter does not accept the API key as a flag, because other users of the host can see flags in the process list.
 
-The directory `examples` has a systemd unit, a Prometheus configuration, and Prometheus rules.
+The directory `examples/prometheus` has a Prometheus configuration and Prometheus rules.
 
-To build a container image, run `make docker`.
-Then start the container with `docker run -e AMBER_API_KEY -p 10062:10062 amber_exporter:0.1.0`.
+## Install
+
+Each release has these artifacts:
+
+- Archives of the binary for Linux and macOS, for `amd64` and `arm64`.
+- Packages for Linux: `rpm`, `deb`, and `apk`.
+- A container image: `ghcr.io/goodtune/amber_exporter`.
+
+### Linux package
+
+The package installs the binary, a systemd unit, and the file `/etc/amber_exporter/environment`.
+The unit is not enabled after the installation, because the exporter cannot start without an API key.
+
+1. Install the package.
+2. Put the API key in `/etc/amber_exporter/environment`, on the line `AMBER_API_KEY=`.
+3. To set flags, put them in the same file, on the line `AMBER_EXPORTER_ARGS=`.
+4. Start the service:
+
+   ```sh
+   sudo systemctl enable --now amber_exporter.service
+   ```
+
+Only root can read the environment file. The service runs as a dynamic user that has no access to the file.
+
+### Container
+
+```sh
+docker run -e AMBER_API_KEY -p 10062:10062 ghcr.io/goodtune/amber_exporter
+```
 
 Note: Port 10062 was not in the Prometheus list of default port allocations on 2026-11-14. The port is not registered in that list.
 
@@ -180,7 +202,8 @@ amber_exporter_build_info
 
 To see when the version changed, make a graph of `amber_exporter_build_info`.
 
-`make build`, `make docker`, and `promu build` set the version from the file `VERSION`.
+A release build gets its version from the Git tag.
+`make build` gets its version from `git describe`.
 A build with `go build` or `go install` uses the version of the Go module.
 
 ## How the exporter handles time
@@ -303,8 +326,20 @@ For a chart of the forecast against clock time:
 ## Development
 
 ```sh
-make all     # format check, vet, tests, build
-make lint    # golangci-lint
+make all            # format check, vet, tests, build
+make lint           # golangci-lint
+make release-check  # validate .goreleaser.yml
+make snapshot       # build all release artifacts into dist/, publish nothing
 ```
 
 The tests do not use the network. They use the fixtures in `amber/testdata`, which contain no real data.
+
+## Release
+
+[GoReleaser](https://goreleaser.com) builds and publishes the releases.
+
+1. Publish a GitHub release with a tag in the format `v1.2.3`.
+2. The workflow `Release` then runs GoReleaser.
+
+GoReleaser adds the archives, the packages, and the checksums to the GitHub release.
+It also pushes the container image to `ghcr.io/goodtune/amber_exporter` with the tag of the release and the tag `latest`.

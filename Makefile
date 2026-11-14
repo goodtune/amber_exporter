@@ -1,51 +1,55 @@
-GO          ?= go
-BIN         := amber_exporter
-VERSION     ?= $(shell cat VERSION)
-REVISION    ?= $(shell git rev-parse --verify -q HEAD || echo unknown)
-BRANCH      ?= $(shell git symbolic-ref -q --short HEAD || echo unknown)
-BUILD_USER  ?= $(shell whoami)@$(shell hostname)
-BUILD_DATE  ?= $(shell date -u +%Y%m%d-%H:%M:%S)
-DOCKER_IMAGE ?= amber_exporter
+GO     ?= go
+BINARY := amber_exporter
 
+# Strip the leading "v" of the tag so that a local build has the same version
+# string as a GoReleaser build ({{.Version}} has no "v").
+VERSION    := $(shell git describe --tags --always --dirty 2>/dev/null | sed 's/^v//')
+REVISION   := $(shell git rev-parse --verify -q HEAD || echo unknown)
+BRANCH     := $(shell git symbolic-ref -q --short HEAD || echo unknown)
+BUILD_DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+
+# The same variables that .goreleaser.yml sets.
 VERSION_PKG := github.com/prometheus/common/version
 LDFLAGS     := -s -w \
 	-X $(VERSION_PKG).Version=$(VERSION) \
 	-X $(VERSION_PKG).Revision=$(REVISION) \
 	-X $(VERSION_PKG).Branch=$(BRANCH) \
-	-X $(VERSION_PKG).BuildUser=$(BUILD_USER) \
+	-X $(VERSION_PKG).BuildUser=make \
 	-X $(VERSION_PKG).BuildDate=$(BUILD_DATE)
 
-.PHONY: all
+.PHONY: all build test vet lint format format-check release-check snapshot
+
+## all: format check, vet, tests and build
 all: format-check vet test build
 
-.PHONY: build
+## build: compile the binary
 build:
-	CGO_ENABLED=0 $(GO) build -trimpath -ldflags "$(LDFLAGS)" -o $(BIN) .
+	CGO_ENABLED=0 $(GO) build -trimpath -ldflags '$(LDFLAGS)' -o $(BINARY) .
 
-.PHONY: test
+## test: run all unit tests
 test:
 	$(GO) test -race ./...
 
-.PHONY: vet
+## vet: run go vet
 vet:
 	$(GO) vet ./...
 
-.PHONY: lint
+## lint: run golangci-lint (if installed)
 lint:
-	golangci-lint run
+	golangci-lint run ./...
 
-.PHONY: format
+## format: format the code
 format:
 	gofmt -w .
 
-.PHONY: format-check
+## format-check: fail if a file is not formatted
 format-check:
 	@test -z "$$(gofmt -l .)" || (echo "These files need gofmt:"; gofmt -l .; exit 1)
 
-.PHONY: docker
-docker:
-	docker build \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg REVISION=$(REVISION) \
-		--build-arg BRANCH=$(BRANCH) \
-		-t $(DOCKER_IMAGE):$(VERSION) .
+## release-check: validate .goreleaser.yml
+release-check:
+	goreleaser check
+
+## snapshot: build all release artifacts into dist/ and publish nothing
+snapshot:
+	goreleaser release --snapshot --clean

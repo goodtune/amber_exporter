@@ -1,0 +1,9 @@
+# Environment of amber_exporter.service.
+
+# The Amber API key. Create one in the Amber web app:
+# https://app.amber.com.au/developers
+AMBER_API_KEY=
+
+# Flags for the exporter. Run "amber_exporter --help" to see them.
+# Example: AMBER_EXPORTER_ARGS=--collector.usage.lookback-days=14
+AMBER_EXPORTER_ARGS=

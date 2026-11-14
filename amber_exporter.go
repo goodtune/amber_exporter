@@ -31,6 +31,9 @@ const (
 	exporterName = "amber_exporter"
 	// apiKeyEnv is the environment variable that holds the API key.
 	apiKeyEnv = "AMBER_API_KEY"
+	// exitNoAPIKey is the exit status when there is no API key. The systemd
+	// unit does not start the exporter again after this status.
+	exitNoAPIKey = 2
 )
 
 func main() {
@@ -38,9 +41,9 @@ func main() {
 	os.Exit(run())
 }
 
-// setDefaultVersion gives the build a version when the linker flags of the
-// Makefile, promu or the Dockerfile did not set one, as with a plain
-// "go build" or "go install". amber_exporter_build_info then always says
+// setDefaultVersion gives the build a version when the linker flags of
+// GoReleaser or the Makefile did not set one, as with a plain "go build" or
+// "go install". amber_exporter_build_info then always says
 // which build made the data.
 func setDefaultVersion() {
 	if version.Version != "" {
@@ -85,7 +88,7 @@ func run() int {
 	apiKey, err := readAPIKey(*apiKeyFile)
 	if err != nil {
 		logger.Error("Cannot read the Amber API key", "err", err)
-		return 1
+		return exitNoAPIKey
 	}
 
 	apiMetrics := collector.NewAPIMetrics()

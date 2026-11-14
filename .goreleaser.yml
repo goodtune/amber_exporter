@@ -1,0 +1,75 @@
+version: 2
+
+builds:
+  - main: .
+    binary: amber_exporter
+    env:
+      - CGO_ENABLED=0
+    # The version variables are those of prometheus/common/version. They
+    # fill amber_exporter_build_info and the output of --version.
+    ldflags:
+      - -s -w
+      - -X github.com/prometheus/common/version.Version={{.Version}}
+      - -X github.com/prometheus/common/version.Revision={{.FullCommit}}
+      - -X github.com/prometheus/common/version.Branch={{.Branch}}
+      - -X github.com/prometheus/common/version.BuildUser=goreleaser
+      - -X github.com/prometheus/common/version.BuildDate={{.Date}}
+    targets:
+      - linux_amd64
+      - linux_arm64
+      - darwin_amd64
+      - darwin_arm64
+
+archives:
+  - formats:
+      - tar.gz
+    files:
+      - README.md
+
+nfpms:
+  - id: amber_exporter
+    package_name: amber-exporter
+    vendor: goodtune
+    homepage: https://github.com/goodtune/amber_exporter
+    maintainer: goodtune <goodtune@users.noreply.github.com>
+    description: Prometheus exporter for Amber Electric prices, forecasts and usage
+    formats:
+      - rpm
+      - deb
+      - apk
+    bindir: /usr/bin
+    contents:
+      - src: packaging/systemd/amber_exporter.service
+        dst: /usr/lib/systemd/system/amber_exporter.service
+        type: config
+      # The file holds the API key, so only root can read it.
+      - src: packaging/environment
+        dst: /etc/amber_exporter/environment
+        type: config|noreplace
+        file_info:
+          mode: 0600
+    scripts:
+      postinstall: packaging/scripts/postinstall.sh
+      preremove: packaging/scripts/preremove.sh
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+dockers_v2:
+  - images:
+      - "ghcr.io/goodtune/amber_exporter"
+    tags:
+      - "{{ .Tag }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    dockerfile: Dockerfile.goreleaser

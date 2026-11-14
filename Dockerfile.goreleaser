@@ -1,0 +1,6 @@
+FROM gcr.io/distroless/static-debian12:nonroot
+ARG TARGETPLATFORM
+COPY ${TARGETPLATFORM}/amber_exporter /amber_exporter
+EXPOSE 10062
+# Give the API key in the AMBER_API_KEY environment variable.
+ENTRYPOINT ["/amber_exporter"]
