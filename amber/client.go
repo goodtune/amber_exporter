@@ -146,6 +146,21 @@ func (c *Client) CurrentPrices(ctx context.Context, siteID string, opts PriceOpt
 	return intervals, nil
 }
 
+// Prices returns the past prices of a site for each interval from the start
+// day to the end day, both included, at the interval length of the site.
+// The API accepts at most 7 days in one request.
+func (c *Client) Prices(ctx context.Context, siteID string, start, end time.Time) ([]Interval, error) {
+	q := url.Values{}
+	q.Set("startDate", start.Format(DateFormat))
+	q.Set("endDate", end.Format(DateFormat))
+	var intervals []Interval
+	path := "/sites/" + url.PathEscape(siteID) + "/prices"
+	if err := c.get(ctx, "prices", path, q, &intervals); err != nil {
+		return nil, err
+	}
+	return intervals, nil
+}
+
 // Usage returns the metered usage of a site for each interval from the
 // start day to the end day, both included. The API accepts at most 7 days
 // in one request and keeps 90 days of history.
