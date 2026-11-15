@@ -245,6 +245,65 @@ To load the history that the API keeps, start the exporter one time with `--coll
 After Prometheus scrapes the exporter one time, start the exporter again with the default value.
 The retention time of Prometheus sets how far back you can query the days.
 
+## Backfill of past prices
+
+Prometheus has the prices only from the time of the first scrape.
+The command `amber_backfill` gets the earlier prices from the API and writes them as samples of the same series.
+`promtool` then makes TSDB blocks from these samples.
+
+The command writes the metrics of the `prices` collector only:
+
+- For usage, a backfill is not necessary. Refer to [Usage: the `date` label](#usage-the-date-label).
+- The API does not keep the forecasts of the past.
+
+A past price is final, thus `amber_price_estimate` is 0 in the backfill.
+
+1. Find the time of the first scrape. In Prometheus, run this query and convert the result to a date:
+
+   ```promql
+   min(min_over_time(timestamp(amber_price_cents_per_kwh)[30d:1h]))
+   ```
+
+2. Write the samples. Give the time of the first scrape in `--end`, and the labels of the scrape target in `--job` and `--instance`:
+
+   ```sh
+   export AMBER_API_KEY=psk_...
+   go run ./cmd/amber_backfill \
+     --job amber --instance amber_exporter:10062 \
+     --end 2026-11-15T02:59:48Z --days 30 \
+     -o backfill.om
+   ```
+
+3. Make the blocks, with the `promtool` of your Prometheus version:
+
+   ```sh
+   mkdir blocks
+   promtool tsdb create-blocks-from openmetrics --max-block-duration=24h backfill.om blocks
+   ```
+
+4. Move the directories in `blocks` into the data directory of Prometheus. The user of Prometheus must own them.
+   Prometheus loads the blocks in a few minutes. A restart is not necessary.
+
+Obey these rules:
+
+- The values of `--job` and `--instance` must be the same as the labels of the scraped series. If they are different, the backfill makes new series.
+- Do not set `--end` to a time after the first scrape. Samples of the backfill must not have the same time range as samples of the scrapes.
+- The retention time of Prometheus must be longer than the age of the oldest sample. Prometheus deletes blocks that are older.
+
+| Flag | Default | Function |
+|---|---|---|
+| `--job` | `amber` | Value of the `job` label. |
+| `--instance` | none | Value of the `instance` label. This flag is necessary. |
+| `--end` | now | End of the backfill, in the RFC 3339 format. The backfill has no sample at this time or after it. |
+| `--days` | `30` | Number of days before the end. |
+| `--step` | `1m` | Time between two samples. Use the scrape interval. |
+| `--output`, `-o` | standard output | File for the samples. |
+| `--amber.site-id` | all active sites | Site to backfill. You can repeat the flag. |
+
+The flags `--amber.api-key-file`, `--amber.api-url`, and `--amber.timeout` are the same as for the exporter.
+The API gives 7 days of prices for each request, thus 30 days use 5 requests for each site.
+One site with 5-minute intervals and 30 days makes approximately 1.7 million samples in a file of 250 MB.
+
 ## Queries
 
 Price now, and the value of solar export now, in c/kWh:

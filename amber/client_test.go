@@ -291,3 +291,26 @@ func TestRateLimitRefusedWithoutHeaders(t *testing.T) {
 		t.Errorf("RetryAt = %s, want %s", rl.RetryAt, want)
 	}
 }
+
+func TestPrices(t *testing.T) {
+	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/sites/SITE/prices" {
+			t.Errorf("path = %q", r.URL.Path)
+		}
+		if got := r.URL.RawQuery; got != "endDate=2026-11-14&startDate=2026-11-08" {
+			t.Errorf("query = %q", got)
+		}
+		_, _ = w.Write([]byte(`[{"type":"ActualInterval","duration":5,"perKwh":18.5,` +
+			`"endTime":"2026-11-08T14:05:00Z","channelType":"general"}]`))
+	})
+	c := NewClient("secret", WithBaseURL(srv.URL))
+
+	start := time.Date(2026, 11, 8, 0, 0, 0, 0, time.UTC)
+	prices, err := c.Prices(context.Background(), "SITE", start, start.AddDate(0, 0, 6))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(prices) != 1 || prices[0].Type != TypeActual || prices[0].PerKwh != 18.5 {
+		t.Errorf("unexpected prices: %+v", prices)
+	}
+}

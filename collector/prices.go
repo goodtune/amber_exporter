@@ -143,7 +143,13 @@ func (c *pricesCollector) collectSite(ch chan<- prometheus.Metric, siteID string
 	if len(current) == 0 {
 		return errors.New("the API returned no current interval")
 	}
+	c.send(ch, siteID, current)
+	return nil
+}
 
+// send sends the metrics of one interval of a site. The slice has that
+// interval once for each channel and must not be empty.
+func (c *pricesCollector) send(ch chan<- prometheus.Metric, siteID string, current []amber.Interval) {
 	for _, i := range current {
 		gauge(ch, c.price, signed(i.ChannelType, i.PerKwh), siteID, i.ChannelType)
 		if i.Estimate != nil {
@@ -168,7 +174,6 @@ func (c *pricesCollector) collectSite(ch chan<- prometheus.Metric, siteID string
 	gauge(ch, c.intervalEnd, unixSeconds(i.EndTime), siteID)
 	gauge(ch, c.spotPrice, i.SpotPerKwh, siteID)
 	gauge(ch, c.renewables, i.Renewables/100, siteID)
-	return nil
 }
 
 // siteInterval returns the interval that site-wide values are read from:
